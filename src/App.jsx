@@ -4,10 +4,16 @@ import React, {
     useEffect, useCallback
 } from 'react';
 import './App.css';
-import {createSet, createAdd, createRemove, createToggle} from "./actions"
+import { createAdd, createRemove, createToggle} from "./actions"
+import reducer from './reducers';
 
 let idSeq = Date.now();
 const todo_key = '_$_todo';
+
+let store = {
+    todos: [],
+    incrementCount: 0,
+}
 
 function bindActionCreators(actionCreators, dispatch) {
     const ret = {};
@@ -95,28 +101,30 @@ const Todos = React.memo((props) => {
 const TodoList = (props) => {
     const [todos, setTodos] = useState([]);
     const [count, setCount] = useState(0);
-    const dispatch = useCallback((action)=>{
-        const {type, payload} = action;
-        switch (type) {
-            case 'set':
-                setTodos(payload);
-                break;
-            case 'add':
-                setTodos(todos=>[...todos, payload]);
-                break;
-            case 'remove':
-                setTodos(todos => todos.filter(item=>item.id != payload));
-                break;
-            case 'toggle':
-                setTodos(todos => todos.map(todo=>{
-                    return todo.id === payload
-                        ? {...todo, complete: !todo.complete}
-                        : todo;
-                }));
-                break;
-            default:
-        }
-    }, []);
+    const [incrementCount, setIncrementCount] = useState(0);
+
+    useEffect(()=>{
+        Object.assign(store, {
+            todos,
+            incrementCount
+        })
+    }, [todos, incrementCount]);
+
+    const dispatch = (action)=>{
+            const setters = {
+                todos: setTodos,
+                incrementCount: setIncrementCount,
+            };
+
+            if('function' === typeof action){
+                action(dispatch, ()=>store);
+                return;
+            }
+            const newState = reducer(store, action);
+            for(let key in newState){
+                setters[key](newState[key]);
+            }
+    };
 
     useEffect(()=>{
         dispatch({type: 'set', payload: JSON.parse(localStorage.getItem(todo_key)||[])})

@@ -6,6 +6,17 @@ export function createSet(payload) {
 }
 
 export function createAdd(payload) {
+    return (dispatch, getState) =>{
+        setTimeout(()=>{
+            const {todos} = getState();
+            if(!todos.find(todo => todo.text === payload.text)){
+                dispatch({
+                    type: 'add',
+                    payload: payload
+                })
+            }
+        }, 3000);
+    }
     return {
         type: 'add',
         payload,
