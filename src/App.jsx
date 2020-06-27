@@ -4,12 +4,25 @@ import React, {
     useEffect, useCallback
 } from 'react';
 import './App.css';
+import {createSet, createAdd, createRemove, createToggle} from "./actions"
 
 let idSeq = Date.now();
 const todo_key = '_$_todo';
 
+function bindActionCreators(actionCreators, dispatch) {
+    const ret = {};
+    for(let key in actionCreators){
+        ret[key] = function (...args) {
+            const actionCreator = actionCreators[key];
+            const action = actionCreator(...args);
+            dispatch(action);
+        }
+    }
+    return ret;
+}
+
 const Control = React.memo((props)=>{
-    const {dispatch} = props;
+    const {addTodo} = props;
     const inputRef = useRef();
     const onSubmit = (e)=>{
         e.preventDefault();
@@ -18,12 +31,12 @@ const Control = React.memo((props)=>{
             return;
         }
 
-        dispatch({type: 'add', payload: {
-                id: idSeq++,
-                text: newText,
-                complete: false
-            }});
 
+        addTodo({
+            id: idSeq++,
+            text: newText,
+            complete: false
+        });
         inputRef.current.value = '';
 
     }
@@ -43,12 +56,12 @@ const Control = React.memo((props)=>{
 });
 
 const TodoItem = React.memo((props) => {
-    const {todo, dispatch} = props;
+    const {todo, toggleTodo, removeTodo} = props;
     const onChange = ()=>{
-        dispatch({type: 'toggle', payload: todo.id});
+        toggleTodo(todo.id);
     };
     const onRemove = ()=>{
-        dispatch({type: 'remove', payload: todo.id});
+        removeTodo(todo.id);
     };
     return (
         <li className="todo-item">
@@ -60,7 +73,7 @@ const TodoItem = React.memo((props) => {
 });
 
 const Todos = React.memo((props) => {
-    const {todos, dispatch} = props;
+    const {todos, removeTodo, toggleTodo} = props;
     console.log("Todos");
     return (
         <ul>
@@ -70,7 +83,8 @@ const Todos = React.memo((props) => {
                         <TodoItem
                             key={todo.id}
                             todo={todo}
-                            dispatch={dispatch}/>
+                            removeTodo={removeTodo}
+                            toggleTodo={toggleTodo}/>
                     )
                 })
             }
@@ -119,12 +133,25 @@ const TodoList = (props) => {
                 <button onClick={()=>{setCount(count=>count+1)}}>点我</button><p>{count}</p>
             </div>
             <div className="todo-list">
-                <Control dispatch={dispatch}/>
-                <Todos todos={todos} dispatch={dispatch}/>
+                <Control
+                    {
+                        ...bindActionCreators({
+                            addTodo: createAdd
+                        }, dispatch)
+                    }
+                />
+                <Todos todos={todos}
+                   {
+                       ...bindActionCreators({
+                           removeTodo: createRemove,
+                           toggleTodo: createToggle
+                       }, dispatch)
+                   }
+                />
             </div>
         </div>
     )
-}
+};
 
 
 
