@@ -1,7 +1,7 @@
 import React, {
     useState,
     useRef,
-    useEffect
+    useEffect, useCallback
 } from 'react';
 import './App.css';
 
@@ -61,6 +61,7 @@ const TodoItem = React.memo((props) => {
 
 const Todos = React.memo((props) => {
     const {todos, dispatch} = props;
+    console.log("Todos");
     return (
         <ul>
             {
@@ -79,8 +80,8 @@ const Todos = React.memo((props) => {
 
 const TodoList = (props) => {
     const [todos, setTodos] = useState([]);
-
-    const dispatch =(action)=>{
+    const [count, setCount] = useState(0);
+    const dispatch = useCallback((action)=>{
         const {type, payload} = action;
         switch (type) {
             case 'set':
@@ -101,7 +102,7 @@ const TodoList = (props) => {
                 break;
             default:
         }
-    };
+    }, []);
 
     useEffect(()=>{
         dispatch({type: 'set', payload: JSON.parse(localStorage.getItem(todo_key)||[])})
@@ -114,6 +115,9 @@ const TodoList = (props) => {
 
     return (
         <div className="wrap">
+            <div>
+                <button onClick={()=>{setCount(count=>count+1)}}>点我</button><p>{count}</p>
+            </div>
             <div className="todo-list">
                 <Control dispatch={dispatch}/>
                 <Todos todos={todos} dispatch={dispatch}/>
